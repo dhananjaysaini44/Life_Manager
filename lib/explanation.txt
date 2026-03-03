@@ -20,7 +20,7 @@ The app uses the **Provider** pattern for state management. The `TaskProvider` c
 
 ### 3. User Interface (lib/screens/)
 - **LoadingScreen**: Provides a professional entry experience with the app's tagline.
-- **TasksScreen**: The main dashboard. It uses `CustomScrollView` and `Slivers` to separate items into "Active" and "Completed" sections.
+- **TasksScreen**: The main dashboard. It uses `CustomScrollView` and `Slivers` to separate items into "Active" and "Completed" sections. Each item has a dedicated delete button.
 - **SettingsScreen**: Allows the user to toggle themes and perform a full system reset.
 
 ## Code Flow & Logic
@@ -39,7 +39,13 @@ The app uses the **Provider** pattern for state management. The `TaskProvider` c
 3. **Updating Status**:
    - When a checkbox is tapped, `toggleItemStatus()` moves the item between the "Active" and "Completed" sections instantly.
 
-4. **Alerts**:
+4. **Deleting an Item**:
+   - The user clicks the trash can icon on the right side of any task or event.
+   - A confirmation dialog appears to prevent accidental deletion.
+   - Upon confirmation, `deleteItem()` is called in the provider, which removes the item and cancels any associated notifications.
+   - `notifyListeners()` is called to refresh the UI.
+
+5. **Alerts**:
    - The app uses `timezone` data to ensure alerts fire correctly regardless of the user's location.
    - Notifications are scheduled with `exactAllowWhileIdle` to ensure they work even when the phone is in a low-power state.
 

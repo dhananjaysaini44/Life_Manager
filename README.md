@@ -13,6 +13,7 @@ Life Manager is a professional, cross-platform Flutter application designed to h
 ## Key Features
 
 - **Double Impact**: Manage both simple **Tasks** and time-bound **Events**.
+- **Individual Deletion**: Easily delete single tasks or events with a dedicated button.
 - **Smart Alerts**: Get notified **15 minutes before** your events start.
 - **Persistent Memory**: Your data stays safe with local storage.
 - **Your Style**: Support for **Light**, **Dark**, and **System Default** themes.
@@ -35,7 +36,7 @@ Powered by the **Provider** pattern, this layer handles:
 
 ### 3. User Interface (`lib/screens/`)
 - **Loading Screen**: A professional entry with the app's tagline.
-- **Dashboard**: Uses `CustomScrollView` and `Slivers` for a responsive, organized list.
+- **Dashboard**: Uses `CustomScrollView` and `Slivers` for a responsive, organized list. Each item has a dedicated delete button.
 - **Settings**: A central hub for theme switching and data management.
 
 ---
@@ -48,7 +49,10 @@ The app kicks off by initializing `WidgetsFlutterBinding` and booting up the `Ta
 ### 2. Adding Items
 When you add an event, the app automatically calculates the alert time and schedules a local notification.
 
-### 3. Smart Alerts
+### 3. Deleting an Item
+The user clicks the trash can icon on the right side of any task or event. A confirmation dialog appears to prevent accidental deletion. Upon confirmation, the item is removed from the list and any associated notifications are cancelled.
+
+### 4. Smart Alerts
 Using `timezone` data and `exactAllowWhileIdle` scheduling, Life Manager ensures you never miss a beat, even if your phone is in power-saving mode.
 
 ---

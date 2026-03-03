@@ -158,7 +158,7 @@ class TasksScreen extends StatelessWidget {
                 if (titleController.text.isNotEmpty) {
                   final provider = Provider.of<TaskProvider>(context, listen: false);
                   if (isEditing) {
-                    provider.updateItem(item.id, titleController.text, descController.text, selectedDate);
+                    provider.updateItem(item!.id, titleController.text, descController.text, selectedDate);
                   } else {
                     provider.addItem(
                       title: titleController.text,
@@ -189,50 +189,79 @@ class _ItemTile extends StatelessWidget {
     final provider = Provider.of<TaskProvider>(context, listen: false);
     final bool isEvent = item.type == ItemType.event;
 
-    return Dismissible(
-      key: Key(item.id),
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+    return ListTile(
+      leading: Checkbox(
+        value: item.isCompleted,
+        onChanged: (_) => provider.toggleItemStatus(item.id),
       ),
-      onDismissed: (_) => provider.deleteItem(item.id),
-      child: ListTile(
-        leading: Checkbox(
-          value: item.isCompleted,
-          onChanged: (_) => provider.toggleItemStatus(item.id),
+      title: Text(
+        item.title,
+        style: TextStyle(
+          decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+          fontWeight: isEvent ? FontWeight.bold : FontWeight.normal,
         ),
-        title: Text(
-          item.title,
-          style: TextStyle(
-            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-            fontWeight: isEvent ? FontWeight.bold : FontWeight.normal,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item.description),
+          if (isEvent && item.dateTime != null)
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.deepPurple),
+                const SizedBox(width: 4),
+                Text(
+                  DateFormat('MMM d, HH:mm').format(item.dateTime!),
+                  style: const TextStyle(fontSize: 12, color: Colors.deepPurple, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Status Icon (Event/Task)
+          Icon(
+            isEvent ? Icons.event : Icons.task_alt,
+            color: isEvent ? Colors.orange : Colors.green,
+            size: 20,
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.description),
-            if (isEvent && item.dateTime != null)
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 14, color: Colors.deepPurple),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('MMM d, HH:mm').format(item.dateTime!),
-                    style: const TextStyle(fontSize: 12, color: Colors.deepPurple, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-          ],
-        ),
-        trailing: Icon(
-          isEvent ? Icons.event : Icons.task_alt,
-          color: isEvent ? Colors.orange : Colors.green,
-          size: 20,
-        ),
-        onTap: () => const TasksScreen()._showItemDialog(context, item: item),
+          // Individual Delete Button
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () => _showDeleteConfirmation(context, provider),
+            tooltip: 'Delete',
+          ),
+        ],
+      ),
+      onTap: () => TasksScreen()._showItemDialog(context, item: item),
+    );
+  }
+
+  /// Shows a confirmation dialog before deleting an individual item.
+  void _showDeleteConfirmation(BuildContext context, TaskProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Item?'),
+        content: Text('Are you sure you want to delete "${item.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              provider.deleteItem(item.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Item deleted')),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

@@ -4,8 +4,13 @@ import 'providers/task_provider.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/settings_screen.dart';
 
+/// The main entry point for the application.
 void main() {
+  // Ensures that Flutter bindings are initialized before any Flutter code is executed.
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Runs the app with a ChangeNotifierProvider at the root.
+  // This makes the TaskProvider accessible throughout the widget tree.
   runApp(
     ChangeNotifierProvider(
       create: (context) => TaskProvider(),
@@ -14,16 +19,20 @@ void main() {
   );
 }
 
+/// The root widget of the application.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Listens to the TaskProvider to rebuild when the theme changes.
     final taskProvider = Provider.of<TaskProvider>(context);
 
     return MaterialApp(
       title: 'Life Manager',
       debugShowCheckedModeBanner: false,
+
+      // --- Theme Configuration ---
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -38,12 +47,15 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: taskProvider.themeMode,
+      themeMode: taskProvider.themeMode, // Theme is controlled by the provider.
+
+      // The initial screen to be displayed.
       home: const LoadingScreen(),
     );
   }
 }
 
+/// A temporary loading screen shown on app startup.
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -58,6 +70,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     _navigateToHome();
   }
 
+  /// Navigates to the main screen after a short delay.
   _navigateToHome() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
@@ -95,6 +108,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 }
 
+/// The main screen that hosts the BottomNavigationBar.
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -105,6 +119,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
+  // The list of screens to be displayed in the navigation bar.
   static const List<Widget> _screens = [
     TasksScreen(),
     SettingsScreen(),
