@@ -1,83 +1,126 @@
 # Life Manager
 
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev/)
-[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev/)
-[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![Material 3](https://img.shields.io/badge/Material%203-%23757575.svg?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Desktop-lightgrey?style=for-the-badge)](#)
 
-> **Manage your life Skillfully!!!**
-
-Life Manager is a professional, cross-platform Flutter application designed to help you stay on top of your daily tasks and scheduled events. It combines powerful features like persistent storage, theme customization, and an automated alert system into a clean, modern interface.
-
----
-
-## Key Features
-
-- **Double Impact**: Manage both simple **Tasks** and time-bound **Events**.
-- **Individual Deletion**: Easily delete single tasks or events with a dedicated button.
-- **Smart Alerts**: Get notified **15 minutes before** your events start.
-- **Persistent Memory**: Your data stays safe with local storage.
-- **Your Style**: Support for **Light**, **Dark**, and **System Default** themes.
-- **Fluid UI**: Smooth animations and organized sections for Active and Completed items.
+A professional personal productivity and task management suite. Built with a focus on reactive architecture, adaptive design, and the Material 3 design system.
 
 ---
 
-## Core Components
+## Core Features
 
-### 1. Data Model (`lib/models/task.dart`)
-The `LifeItem` class is the heart of the app, using an `ItemType` enum to categorize your entries:
-- **Task**: A simple to-do item.
-- **Event**: A scheduled item with a specific date and time.
+### Material You and Adaptive Theming
+*   **Dynamic Color Support**: Automatically derives color schemes from system wallpapers on Android 12+.
+*   **Optimized Dark Mode**: High-contrast, semantic color mapping for superior readability in low-light environments.
+*   **Custom Seed Seeding**: Allows manual override of brand colors via SharedPreferences.
 
-### 2. State Management (`lib/providers/task_provider.dart`)
-Powered by the **Provider** pattern, this layer handles:
-- **CRUD Operations**: Effortless adding, updating, and deleting.
-- **Persistence**: Powered by `shared_preferences` for reliable local storage.
-- **Notification Engine**: Schedules precise alerts using `flutter_local_notifications`.
+### Advanced Task Engine
+*   **Hierarchical Sub-Tasks**: Granular control over complex objectives with real-time status syncing.
+*   **Dynamic Prioritization**: Automated sorting and filtering for high-priority requirements.
+*   **Project Management**: Visual progress indicators and deadline tracking for long-term goals.
 
-### 3. User Interface (`lib/screens/`)
-- **Loading Screen**: A professional entry with the app's tagline.
-- **Dashboard**: Uses `CustomScrollView` and `Slivers` for a responsive, organized list. Each item has a dedicated delete button.
-- **Settings**: A central hub for theme switching and data management.
+### Unified Scheduling
+*   **Chronological Timeline**: Interactive calendar grid coupled with a daily event timeline.
+*   **Categorization**: Distinct segments for Work, Personal, and Urgent engagements.
+*   **Quick Entry System**: A modal-driven brainstorming interface for instant data capture.
 
----
-
-## How It Works
-
-### 1. Initialization
-The app kicks off by initializing `WidgetsFlutterBinding` and booting up the `TaskProvider`, which instantly restores your saved data and prepares the notification engine.
-
-### 2. Adding Items
-When you add an event, the app automatically calculates the alert time and schedules a local notification.
-
-### 3. Deleting an Item
-The user clicks the trash can icon on the right side of any task or event. A confirmation dialog appears to prevent accidental deletion. Upon confirmation, the item is removed from the list and any associated notifications are cancelled.
-
-### 4. Smart Alerts
-Using `timezone` data and `exactAllowWhileIdle` scheduling, Life Manager ensures you never miss a beat, even if your phone is in power-saving mode.
+### Cross-Platform Architecture
+*   **Stateful Shell Routing**: Persistent navigation state across tabs using GoRouter.
+*   **Responsive Layouts**: Intelligent UI scaling for mobile, tablet, and desktop viewports.
 
 ---
 
-## System Requirements (Android)
+## Technical Stack
 
-- **Java 8 Support**: Java Desugaring is enabled for modern date/time functionality.
-- **Permissions**:
-  - `POST_NOTIFICATIONS`: For alerts on Android 13+.
-  - `USE_EXACT_ALARM`: For precise event timing.
+| Category | Technology |
+| :--- | :--- |
+| **Framework** | Flutter |
+| **State Management** | Riverpod (Functional & Reactive) |
+| **Database** | Drift (SQLite ORM) with asynchronous DAOs |
+| **Navigation** | GoRouter (Stateful Shell Implementation) |
+| **Theming** | Material 3 with Dynamic Color support |
+| **Local Storage** | SharedPreferences |
+| **Build Target** | Android SDK 35 / NDK 27 |
 
 ---
 
 ## Getting Started
 
-1. **Clone the repo**
-2. **Install dependencies**:
-   ```bash
+### Prerequisites
+- Flutter SDK `^3.8.1`
+- Android SDK 35 & NDK 27.0.12077973
+
+### Installation
+
+1. **Dependency Resolution**
+   ```sh
    flutter pub get
    ```
-3. **Run the app**:
-   ```bash
+
+2. **Code Generation**
+   ```sh
+   flutter pub run build_runner build --delete-conflicting-outputs
+   ```
+
+3. **Execution**
+   ```sh
    flutter run
    ```
 
 ---
 
-*Crafted for a more organized life.*
+## Project Anatomy
+
+```text
+lib/
+ ├── data/
+ │    ├── repositories/     # Repository layer isolating DAOs from UI
+ │    │    ├── note_repository.dart
+ │    │    ├── project_repository.dart
+ │    │    ├── schedule_repository.dart
+ │    │    ├── subtask_repository.dart
+ │    │    └── task_repository.dart
+ │    ├── database.dart     # Drift table definitions and DB configuration
+ │    ├── database.g.dart   # Generated code (Mappers, Companions, Classes)
+ │    └── seed_data.dart    # Initial database population logic
+ ├── navigation/
+ │    └── app_router.dart   # GoRouter configuration & StatefulShell logic
+ ├── providers/
+ │    ├── database_providers.dart # Singleton instances for DB and Repos
+ │    ├── settings_provider.dart # Application state (Theme, Color)
+ │    └── state_providers.dart   # Reactive UI streams (Stats, Tasks, Events)
+ ├── theme/
+ │    └── app_theme.dart    # Material 3 Light/Dark theme specifications
+ ├── ui/
+ │    ├── screens/          # Feature-specific page implementations
+ │    │    ├── home_screen.dart
+ │    │    ├── tasks_screen.dart
+ │    │    ├── schedule_screen.dart
+ │    │    ├── task_detail_screen.dart
+ │    │    └── settings_screen.dart
+ │    └── widgets/          # Atomic reusable UI components
+ │         ├── category_chip.dart
+ │         ├── main_shell.dart
+ │         ├── project_card.dart
+ │         ├── quick_add_sheet.dart
+ │         ├── schedule_event_card.dart
+ │         ├── stat_card.dart
+ │         ├── sub_task_item.dart
+ │         └── task_item.dart
+ └── main.dart              # Application entry point & initialization
+```
+
+---
+
+## Implementation Checklist
+- [x] Staggered Section Animations
+- [x] Stateful Tab Persistence (IndexedStack)
+- [x] Reactive DB Streams (Riverpod)
+- [x] Two-Pane Adaptive UI
+- [x] Semantic Dark Mode Mapping
+- [x] Dynamic Color Integration
+
+---
+*Developed with Flutter and the Material 3 Design System.*
