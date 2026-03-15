@@ -2,6 +2,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'database_providers.dart';
 import '../data/database.dart';
 
+final allEventsProvider = StreamProvider<List<ScheduleEvent>>((ref) {
+  return ref.watch(scheduleRepositoryProvider).watchAllEvents();
+});
+
+final urgentItemsProvider = Provider<AsyncValue<List<dynamic>>>((ref) {
+  final tasksAsync = ref.watch(allTasksProvider);
+  final eventsAsync = ref.watch(allEventsProvider);
+
+  return tasksAsync.when(
+    data: (tasks) => eventsAsync.when(
+      data: (events) {
+        final urgentTasks = tasks.where((t) => t.priority == 'high' && t.status != 'completed').toList();
+        final urgentEvents = events.where((e) {
+          try {
+            return !(e as dynamic).isCompleted;
+          } catch (_) {
+            return true; 
+          }
+        }).toList();
+        
+        return AsyncValue.data([...urgentTasks, ...urgentEvents]);
+      },
+      loading: () => const AsyncValue.loading(),
+      error: (e, st) => AsyncValue.error(e, st),
+    ),
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
+
 final activeProjectsProvider = StreamProvider<List<Project>>((ref) {
   return ref.watch(projectRepositoryProvider).watchAllProjects();
 });
@@ -40,13 +70,13 @@ final notesProvider = StreamProvider<List<Note>>((ref) {
 
 class HomeStats {
   final int tasksDone;
-  final int focusHours;
+  final int pendingCount;
   final int upcomingEvents;
   final int productivityScore;
 
   HomeStats({
     required this.tasksDone,
-    required this.focusHours,
+    required this.pendingCount,
     required this.upcomingEvents,
     required this.productivityScore,
   });
@@ -54,17 +84,52 @@ class HomeStats {
 
 final homeStatsProvider = Provider<AsyncValue<HomeStats>>((ref) {
   final tasksAsync = ref.watch(allTasksProvider);
-  final eventsAsync = ref.watch(todayScheduleProvider);
+  final eventsAsync = ref.watch(allEventsProvider);
 
   return tasksAsync.when(
     data: (tasks) => eventsAsync.when(
       data: (events) {
-        final done = tasks.where((t) => t.status == 'completed').length;
+        final doneTasks = tasks.where((t) => t.status == 'completed').length;
+        final pendingTasks = tasks.where((t) => t.status != 'completed').length;
+        
+        final doneEvents = events.where((e) {
+          try {
+            return (e as dynamic).isCompleted;
+          } catch (_) {
+            return false;
+          }
+        }).length;
+
+        final pendingEvents = events.where((e) {
+          try {
+            return !(e as dynamic).isCompleted;
+          } catch (_) {
+            return true;
+          }
+        }).length;
+        
+        final totalDone = doneTasks + doneEvents;
+        final totalItems = tasks.length + events.length;
+        
+        final productivity = totalItems == 0 ? 0 : ((totalDone / totalItems) * 100).toInt();
+        
+        // Today's upcoming events
+        final today = DateTime.now();
+        final startOfDay = DateTime(today.year, today.month, today.day).millisecondsSinceEpoch;
+        final upcomingToday = events.where((e) {
+          final isToday = e.date == startOfDay;
+          try {
+            return isToday && !(e as dynamic).isCompleted;
+          } catch (_) {
+            return isToday;
+          }
+        }).length;
+
         return AsyncValue.data(HomeStats(
-          tasksDone: done,
-          focusHours: 5, // Mocked
-          upcomingEvents: events.length,
-          productivityScore: 85, // Mocked
+          tasksDone: doneTasks,
+          pendingCount: pendingTasks + pendingEvents,
+          upcomingEvents: upcomingToday,
+          productivityScore: productivity,
         ));
       },
       loading: () => const AsyncValue.loading(),

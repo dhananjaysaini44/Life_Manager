@@ -7,7 +7,6 @@ import '../../providers/state_providers.dart';
 import '../../providers/database_providers.dart';
 import '../../data/database.dart';
 import '../widgets/stat_card.dart';
-import '../widgets/project_card.dart';
 import '../widgets/task_item.dart';
 import '../widgets/schedule_event_card.dart';
 
@@ -42,10 +41,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required by AutomaticKeepAliveClientMixin
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     final statsAsync = ref.watch(homeStatsProvider);
-    final projectsAsync = ref.watch(activeProjectsProvider);
+    final urgentItemsAsync = ref.watch(urgentItemsProvider);
     final priorityTasksAsync = ref.watch(priorityTasksProvider);
     final todayScheduleAsync = ref.watch(todayScheduleProvider);
 
@@ -54,6 +53,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth > 700;
+            
             return CustomScrollView(
               slivers: [
                 SliverAppBar(
@@ -103,56 +104,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                   ],
                 ),
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        _buildAnimatedSection(
-                          index: 0,
-                          child: _buildStatsSection(statsAsync, constraints.maxWidth),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            _buildAnimatedSection(
+                              index: 0,
+                              child: _buildStatsSection(statsAsync, constraints.maxWidth),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildAnimatedSection(
+                              index: 1,
+                              child: Column(
+                                children: [
+                                  _buildSectionHeader('Urgent Tasks & Events', 'View All', () => context.go('/tasks')),
+                                  _buildUrgentList(urgentItemsAsync),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildAnimatedSection(
+                              index: 2,
+                              child: Column(
+                                children: [
+                                  _buildSectionHeader('Priority Tasks', null, null, trailing: IconButton(
+                                    icon: Icon(Icons.add, color: colorScheme.primary),
+                                    onPressed: () {},
+                                  )),
+                                  _buildPriorityTasks(ref, priorityTasksAsync),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildAnimatedSection(
+                              index: 3,
+                              child: Column(
+                                children: [
+                                  _buildSectionHeader('Today\'s Schedule', DateFormat('EEE, MMM d').format(DateTime.now()), null),
+                                  _buildScheduleTimeline(todayScheduleAsync),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildAnimatedSection(
+                              index: 4,
+                              child: _buildQuickNoteSection(ref),
+                            ),
+                            const SizedBox(height: 32),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        _buildAnimatedSection(
-                          index: 1,
-                          child: Column(
-                            children: [
-                              _buildSectionHeader('Active Projects', 'View All', () => context.go('/tasks')),
-                              _buildProjectsList(projectsAsync),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildAnimatedSection(
-                          index: 2,
-                          child: Column(
-                            children: [
-                              _buildSectionHeader('Priority Tasks', null, null, trailing: IconButton(
-                                icon: Icon(Icons.add, color: colorScheme.primary),
-                                onPressed: () {},
-                              )),
-                              _buildPriorityTasks(ref, priorityTasksAsync),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildAnimatedSection(
-                          index: 3,
-                          child: Column(
-                            children: [
-                              _buildSectionHeader('Today\'s Schedule', DateFormat('EEE, MMM d').format(DateTime.now()), null),
-                              _buildScheduleTimeline(todayScheduleAsync),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildAnimatedSection(
-                          index: 4,
-                          child: _buildQuickNoteSection(ref),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -185,7 +191,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   Widget _buildStatsSection(AsyncValue<HomeStats> statsAsync, double width) {
     return statsAsync.when(
       data: (stats) {
-        final crossAxisCount = width > 600 ? 4 : 2;
+        final isDesktop = width > 700;
+        final crossAxisCount = isDesktop ? 4 : 2;
+        // Use childAspectRatio to control height. Lower ratio = taller card.
+        final aspectRatio = isDesktop ? 1.4 : 1.15; 
+        
         return Column(
           children: [
             GridView.count(
@@ -194,12 +204,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: width > 600 ? 2.0 : 1.4,
+              childAspectRatio: aspectRatio,
               children: [
                 StatCard(title: 'Tasks Done', value: stats.tasksDone.toDouble(), icon: Icons.check_circle_outline),
-                StatCard(title: 'Focus Hours', value: stats.focusHours.toDouble(), unit: 'h', icon: Icons.timer_outlined),
-                StatCard(title: 'Upcoming', value: stats.upcomingEvents.toDouble(), icon: Icons.calendar_today_outlined),
-                StatCard(title: 'Productivity', value: 85, unit: '%', icon: Icons.trending_up),
+                StatCard(title: 'Pending', value: stats.pendingCount.toDouble(), icon: Icons.pending_actions_outlined),
+                StatCard(title: 'Today Events', value: stats.upcomingEvents.toDouble(), icon: Icons.calendar_today_outlined),
+                StatCard(title: 'Productivity', value: stats.productivityScore.toDouble(), unit: '%', icon: Icons.trending_up),
               ],
             ),
             const SizedBox(height: 12),
@@ -215,19 +225,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
           ],
         );
       },
-      loading: () => _buildShimmerGrid(),
+      loading: () => _buildShimmerGrid(width),
       error: (e, st) => _buildErrorState(e, st, () => ref.refresh(homeStatsProvider)),
     );
   }
 
-  Widget _buildShimmerGrid() {
+  Widget _buildShimmerGrid(double width) {
+    final isDesktop = width > 700;
+    final crossAxisCount = isDesktop ? 4 : 2;
+    final aspectRatio = isDesktop ? 1.4 : 1.15;
+    
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: crossAxisCount,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.4,
+      childAspectRatio: aspectRatio,
       children: List.generate(4, (index) => const _ShimmerPlaceholder()),
     );
   }
@@ -250,13 +264,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-            if (actionText != null && onAction == null)
-              Text(actionText, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+              if (actionText != null && onAction == null)
+                Text(actionText, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            ],
+          ),
         ),
         if (actionText != null && onAction != null)
           TextButton(onPressed: onAction, child: Text(actionText))
@@ -266,19 +282,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildProjectsList(AsyncValue<List<dynamic>> projectsAsync) {
-    return projectsAsync.when(
-      data: (projects) => projects.isEmpty 
-          ? _buildEmptyState('No active projects.')
+  Widget _buildUrgentList(AsyncValue<List<dynamic>> itemsAsync) {
+    return itemsAsync.when(
+      data: (items) => items.isEmpty 
+          ? _buildEmptyState('No urgent tasks or events.')
           : Column(
-              children: projects.map((p) => ProjectCard(project: p)).toList(),
+              children: items.map((item) {
+                if (item is Task) {
+                  return TaskItem(
+                    task: item,
+                    onToggle: () {
+                      final newStatus = item.status == 'completed' ? 'not_started' : 'completed';
+                      ref.read(taskRepositoryProvider).updateTask(item.copyWith(status: newStatus));
+                    },
+                    onTap: () => context.push('/task-detail/${item.id}'),
+                  );
+                } else if (item is ScheduleEvent) {
+                  return ScheduleEventCard(event: item);
+                }
+                return const SizedBox.shrink();
+              }).toList(),
             ),
       loading: () => const _ShimmerPlaceholder(height: 100),
-      error: (e, _) => Text('Error loading projects', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+      error: (e, _) => Text('Error loading urgent items', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
     );
   }
 
-  Widget _buildPriorityTasks(WidgetRef ref, AsyncValue<List<dynamic>> tasksAsync) {
+  Widget _buildPriorityTasks(WidgetRef ref, AsyncValue<List<Task>> tasksAsync) {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
@@ -309,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildScheduleTimeline(AsyncValue<List<dynamic>> scheduleAsync) {
+  Widget _buildScheduleTimeline(AsyncValue<List<ScheduleEvent>> scheduleAsync) {
     final colorScheme = Theme.of(context).colorScheme;
     return scheduleAsync.when(
       data: (events) => events.isEmpty
